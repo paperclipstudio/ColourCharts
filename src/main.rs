@@ -26,6 +26,15 @@ use std::time::{self, Duration, SystemTime};
 const UVEC_ORIGIN: UVec2 = UVec2 { x: 0, y: 0 };
 const TOP_LEFT: Vec2 = Vec2 { x: 0.0, y: 0.0 };
 
+const SCREENS: [&str; 6] = [
+    "WHITE",
+    "RGB Triangle",
+    "CYM Triangle",
+    "Colour Chart variable",
+    "Gray Tones",
+    "Colour chart static",
+];
+
 struct MyWindowHandler {
     mouse_position: Vec2,
     window_size: UVec2,
@@ -210,14 +219,6 @@ impl WindowHandler for MyWindowHandler {
             _ => self.render_colour_chart(graphics),
         }
 
-        const SCREENS: [&str; 6] = [
-            "WHITE",
-            "RGB Triangle",
-            "CYM Triangle",
-            "Colour Chart variable",
-            "Gray Tones",
-            "Colour chart static",
-        ];
 
         let text = format!(
             "Screen {}\n{}",
