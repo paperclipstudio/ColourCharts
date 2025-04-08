@@ -17,7 +17,7 @@ use speedy2d::Window;
 use std::marker::PhantomData;
 
 use core::f32;
-use rand;
+mod colour_temp;
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::DerefMut;
 use std::rc::Rc;
@@ -26,13 +26,14 @@ use std::time::{self, Duration, SystemTime};
 const UVEC_ORIGIN: UVec2 = UVec2 { x: 0, y: 0 };
 const TOP_LEFT: Vec2 = Vec2 { x: 0.0, y: 0.0 };
 
-const SCREENS: [&str; 6] = [
+const SCREENS: [&str; 7] = [
     "WHITE",
     "RGB Triangle",
     "CYM Triangle",
     "Colour Chart variable",
     "Gray Tones",
     "Colour chart static",
+    "AWB Colours",
 ];
 
 struct MyWindowHandler {
@@ -45,7 +46,44 @@ struct MyWindowHandler {
     last_delta: f32,
     font: Font,
 }
+
+fn scale_color(color: Color, scale: f32) -> Color {
+    Color::from_rgb(color.r() * scale, color.g() * scale, color.b() * scale)
+}
 impl MyWindowHandler {
+    fn render_awb_colour_chart(&self, graphics: &mut Graphics2D) {
+        let padding = 0.3;
+        const BARS: usize = 7;
+        let delta = (self.start_time.elapsed().unwrap().as_millis() as f32 / 1000.0) % 3.0;
+        let colours = (1..5).map(|x| (x as f32) / 5.0);
+        let square_width = (self.window_size_f32.x * (1.0 - (2.0 * padding))) / BARS as f32;
+        let square_height = self.window_size_f32.y * (1.0 - (2.0 * padding));
+
+        let padding_x = self.window_size_f32.x * padding;
+        let padding_y = self.window_size_f32.y * padding + 400.0;
+        let padding = Vec2::new(padding_x, padding_y);
+
+        let temp: f32 = self.last_delta * 1_000.0;
+        let temp_str = format!("{}", temp);
+        let colour = colour_temp::get_colour(temp);
+        graphics.draw_rectangle(Rectangle::new(Vec2::ZERO, self.window_size_f32), colour);
+
+        let block = self
+            .font
+            .layout_text(temp_str.as_str(), 32.0, TextOptions::new());
+
+        graphics.draw_text(self.window_size_f32 / 2.0, Color::BLACK, &block);
+
+        for x in 0..BARS + 1 {
+            let location = speedy2d::shape::Rectangle::new(
+                Vec2::new(square_width * x as f32, 0.0) + padding,
+                Vec2::new(square_width * (x as f32 + 1.0), square_height) + padding,
+            );
+
+            let colour_scaled = scale_color(colour, 1.0 / BARS as f32 * x as f32);
+            graphics.draw_rectangle(location, colour_scaled);
+        }
+    }
     fn render_colour_chart_var(&self, graphics: &mut Graphics2D) {
         let padding = 0.3;
         let delta = (self.start_time.elapsed().unwrap().as_millis() as f32 / 1000.0) % 3.0;
@@ -186,8 +224,10 @@ impl WindowHandler for MyWindowHandler {
             Color::WHITE,
         );
 
-        match self.count % 6 {
-            0 => {}
+        match self.count % 7 {
+            0 => {
+                self.render_awb_colour_chart(graphics);
+            }
             1 => {
                 let cor = [
                     Vec2::new(MARGIN.x, self.window_size.into_f32().y - MARGIN.y),
@@ -216,14 +256,16 @@ impl WindowHandler for MyWindowHandler {
             }
             3 => self.render_colour_chart_var(graphics),
             4 => self.render_grays_changing(graphics),
+            5 => self.render_awb_colour_chart(graphics),
             _ => self.render_colour_chart(graphics),
         }
 
-
         let text = format!(
             "Screen {}\n{}",
-            self.count % 6,
-            SCREENS.get((self.count % 6) as usize).unwrap_or(&"N/A")
+            self.count % (SCREENS.len() as u32),
+            SCREENS
+                .get((self.count % (SCREENS.len() as u32)) as usize)
+                .unwrap_or(&"N/A")
         );
 
         let block = self
@@ -260,6 +302,11 @@ impl WindowHandler for MyWindowHandler {
         button: Option<speedy2d::window::VirtualKeyCode>,
         another: u32,
     ) {
+        match button {
+            None => {}
+            Some(VirtualKeyCode::Q) => helper.terminate_loop(),
+            Some(_) => {}
+        }
         self.hold = !self.hold;
     }
 
