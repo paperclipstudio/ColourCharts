@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 #![allow(unused_variables)]
+use colortemp;
 use rand::seq::SliceRandom;
 use speedy2d::color::Color;
 use speedy2d::dimen::{UVec2, Vec2};
@@ -66,6 +67,13 @@ impl MyWindowHandler {
         let temp: f32 = self.last_delta * 1_000.0;
         let temp_str = format!("{}", temp);
         let colour = colour_temp::get_colour(temp);
+        let colour_tmp = colortemp::temp_to_rgb(temp as i64);
+        let colour = Color::from_rgb(
+            colour_tmp.r as f32 / 255.0,
+            colour_tmp.g as f32 / 255.0,
+            colour_tmp.b as f32 / 255.0,
+        );
+        println!("Colour {:?} temp{}", colour, temp);
         graphics.draw_rectangle(Rectangle::new(Vec2::ZERO, self.window_size_f32), colour);
 
         let block = self
