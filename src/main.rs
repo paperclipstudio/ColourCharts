@@ -37,12 +37,14 @@ const SCREENS: [&str; 7] = [
     "AWB Colours",
 ];
 
+const SCREEN_COUNT: usize = SCREENS.len();
+
 struct MyWindowHandler {
     mouse_position: Vec2,
     window_size: UVec2,
     window_size_f32: Vec2,
     start_time: SystemTime,
-    count: u32,
+    count: usize,
     hold: bool,
     last_delta: f32,
     font: Font,
@@ -73,7 +75,6 @@ impl MyWindowHandler {
             colour_tmp.g as f32 / 255.0,
             colour_tmp.b as f32 / 255.0,
         );
-        println!("Colour {:?} temp{}", colour, temp);
         graphics.draw_rectangle(Rectangle::new(Vec2::ZERO, self.window_size_f32), colour);
 
         let block = self
@@ -232,7 +233,7 @@ impl WindowHandler for MyWindowHandler {
             Color::WHITE,
         );
 
-        match self.count % 7 {
+        match self.count % SCREEN_COUNT {
             0 => {
                 self.render_awb_colour_chart(graphics);
             }
@@ -270,9 +271,9 @@ impl WindowHandler for MyWindowHandler {
 
         let text = format!(
             "Screen {}\n{}",
-            self.count % (SCREENS.len() as u32),
+            self.count % SCREEN_COUNT,
             SCREENS
-                .get((self.count % (SCREENS.len() as u32)) as usize)
+                .get(self.count % SCREENS.len())
                 .unwrap_or(&"N/A")
         );
 
@@ -313,6 +314,8 @@ impl WindowHandler for MyWindowHandler {
         match button {
             None => {}
             Some(VirtualKeyCode::Q) => helper.terminate_loop(),
+            Some(VirtualKeyCode::Left) => self.count = (self.count + 6) % SCREEN_COUNT,
+            Some(VirtualKeyCode::Right) => self.count = (self.count + 1) % SCREEN_COUNT,
             Some(_) => {}
         }
         self.hold = !self.hold;
@@ -339,10 +342,11 @@ impl WindowHandler for MyWindowHandler {
             self.mouse_position.x, self.mouse_position.y
         );
         match button {
-            MouseButton::Left => {}
+            MouseButton::Left => {
+                self.count += 1;
+            }
             MouseButton::Right => helper.terminate_loop(),
             MouseButton::Middle => {
-                self.count += 1;
             }
             MouseButton::Other(_) => {}
         }
@@ -362,6 +366,7 @@ fn main() {
         hold: false,
         last_delta: 0.0,
         font,
+        
     };
     window.run_loop(state);
 }
