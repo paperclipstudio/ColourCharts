@@ -180,6 +180,7 @@ impl MyWindowHandler {
             .zip(greens)
             .zip(blues)
             .map(|((r, g), b)| Color::from_int_rgb(*r, g, b))
+            .rev()
             .collect::<Vec<_>>()
     }
 
@@ -327,7 +328,7 @@ impl WindowHandler for MyWindowHandler {
             4 => self.render_grays_changing(graphics),
             5 => self.render_awb_colour_chart(graphics),
             6 => self.render_colour_chart(graphics),
-            8.. => panic!(),
+            7.. => panic!(),
         }
 
         let text = format!(
@@ -412,6 +413,12 @@ impl WindowHandler for MyWindowHandler {
 }
 
 fn main() {
+    let rgb = colortemp::temp_to_rgb(7000);
+    println!("{} -> ({:3}, {:3}, {:3})", 7000, rgb.r, rgb.g, rgb.b);
+    // for i in (1000..40000).step_by(500) {
+    //     let rgb = colortemp::temp_to_rgb(i);
+    //     println!("{} -> ({:3}, {:3}, {:3})", i, rgb.r, rgb.g, rgb.b);
+    // }
     let window = Window::new_fullscreen_borderless("Colours").unwrap();
     let bytes = include_bytes!("./Boldonse-Regular.ttf");
     let font = Font::new(bytes).unwrap();
