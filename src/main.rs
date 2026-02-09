@@ -28,13 +28,13 @@ const UVEC_ORIGIN: UVec2 = UVec2 { x: 0, y: 0 };
 const TOP_LEFT: Vec2 = Vec2 { x: 0.0, y: 0.0 };
 
 const SCREENS: [&str; 7] = [
-    "WHITE",
+    "Color Classic Clone",
     "RGB Triangle",
     "CYM Triangle",
     "Colour Chart variable",
     "Gray Tones",
+    "Color Temps",
     "Colour chart static",
-    "AWB Colours",
 ];
 
 const SCREEN_COUNT: usize = SCREENS.len();
@@ -155,6 +155,66 @@ impl MyWindowHandler {
         //let tone = Color::from_rgb(1.0, 1.0, delta / 3.0);
         graphics.draw_rectangle(Rectangle::new(Vec2::ZERO, self.window_size_f32), tone);
     }
+
+    fn make_rgb_chart() -> Vec<Color> {
+        let reds: [u8; 24] = [
+            155, 194, 98, 87, 133, 103, // Row 1
+            214, 80, 193, 94, 157, 224, // Row 2
+            56, 70, 175, 231, 187, 8, // Row 3
+            243, 200, 160, 122, 85, 52, // Row 4
+        ];
+        let greens = [
+            82, 150, 122, 108, 128, 189, // Row 1
+            126, 91, 90, 60, 188, 163, // Row 2
+            61, 148, 54, 199, 86, 133, // Row 3
+            243, 200, 160, 122, 85, 52, // Row 4
+        ];
+        let blues = [
+            68, 130, 157, 67, 177, 170, // Row 1
+            44, 166, 99, 108, 64, 46, // Row 2
+            150, 73, 60, 31, 149, 161, // Row 3
+            242, 200, 160, 121, 85, 52, // Row 4
+        ];
+
+        reds.iter()
+            .zip(greens)
+            .zip(blues)
+            .map(|((r, g), b)| Color::from_int_rgb(*r, g, b))
+            .collect::<Vec<_>>()
+    }
+
+    fn render_colour_classic(&self, graphics: &mut Graphics2D) {
+        const COLUMNS: usize = 6;
+        const ROWS: usize = 4;
+
+        let colours: Vec<Color> = Self::make_rgb_chart();
+        let padding = 0.3;
+
+        let square_width = (self.window_size_f32.x * (1.0 - (2.0 * padding))) / COLUMNS as f32;
+        let square_height = (self.window_size_f32.y * (1.0 - (2.0 * padding))) / ROWS as f32;
+
+        let padding_x = self.window_size_f32.x * padding;
+        let padding_y = self.window_size_f32.y * padding;
+        let padding = Vec2::new(padding_x, padding_y);
+        graphics.draw_rectangle(
+            speedy2d::shape::Rectangle::new(Vec2::ZERO, self.window_size_f32),
+            Color::from_gray(0.5),
+        );
+
+        for x in 0..COLUMNS {
+            for y in 0..ROWS {
+                let location = speedy2d::shape::Rectangle::new(
+                    Vec2::new(square_width * x as f32, square_height * y as f32) + padding,
+                    Vec2::new(
+                        square_width * (x as f32 + 1.0),
+                        square_height * (y as f32 + 1.0),
+                    ) + padding,
+                );
+                let colour = colours[x + (y * COLUMNS)];
+                graphics.draw_rectangle(location, colour);
+            }
+        }
+    }
     fn render_colour_chart(&self, graphics: &mut Graphics2D) {
         let padding = 0.3;
         let colours = [
@@ -235,7 +295,7 @@ impl WindowHandler for MyWindowHandler {
 
         match self.count % SCREEN_COUNT {
             0 => {
-                self.render_awb_colour_chart(graphics);
+                self.render_colour_classic(graphics);
             }
             1 => {
                 let cor = [
@@ -266,15 +326,14 @@ impl WindowHandler for MyWindowHandler {
             3 => self.render_colour_chart_var(graphics),
             4 => self.render_grays_changing(graphics),
             5 => self.render_awb_colour_chart(graphics),
-            _ => self.render_colour_chart(graphics),
+            6 => self.render_colour_chart(graphics),
+            8.. => panic!(),
         }
 
         let text = format!(
             "Screen {}\n{}",
             self.count % SCREEN_COUNT,
-            SCREENS
-                .get(self.count % SCREENS.len())
-                .unwrap_or(&"N/A")
+            SCREENS.get(self.count % SCREENS.len()).unwrap_or(&"N/A")
         );
 
         let block = self
@@ -346,8 +405,7 @@ impl WindowHandler for MyWindowHandler {
                 self.count += 1;
             }
             MouseButton::Right => helper.terminate_loop(),
-            MouseButton::Middle => {
-            }
+            MouseButton::Middle => {}
             MouseButton::Other(_) => {}
         }
     }
@@ -366,7 +424,6 @@ fn main() {
         hold: false,
         last_delta: 0.0,
         font,
-        
     };
     window.run_loop(state);
 }
